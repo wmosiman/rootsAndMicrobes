@@ -1,44 +1,54 @@
-# this file: testLlamaParse.R
+# this file: pdfTextExtraction/testLlamaParse_Google.R
 # created: 2025-01-09 WM
-# goal: see if I can get llamaparse to work in R using restAPI!
+# goal: see if I can get llamaparse to work in R using restAPI and read files from google drive!
 
 rm(list = ls())
 
+# load packages etc ####
 library(httr)
-# install.packages("jsonlite")
 library(jsonlite)
 
-# API from LlamaParse
+# save API key for LlamaParse
+# find a more secure way to do this wyatt! Important if we actually start spending money
 apiKey <- "llx-6t7yYTJFopYODUsCTBZdEIBXHuAHF60ZwfCK63XZIbLJ0XDw"
 
 
-# prep google drive link
+# prep google drive link ####
 
-gl <- "https://drive.google.com/file/d/1BTvOXa5Df_QEL0bQTrqbg4MajcGtLh52/view?usp=drive_link"
+# when you copy a link to one of our pdfs in google drive, you get a 'view' link.
+# If you give this view link to llamaparse, the link will direct Llamaparse to the google drive sign-in, which is what will get parsed. No bueno! What LlamaParse needs is a direct download link, which is the kind of link you could paste into google and it will just automatically download the file to your computer. The view link we've already copied can easily be transformed into a download link using the file ID, which is all the letters and numbers etc after 'file/d/' and before '/view?'in the link. That's what this step serves to accomplish
+# IMPORTANT! make sure the links are set to "Anyone with the link - Anyone on the internet with the link can view"
 
-# Extract file ID
-fileId <- sub(".*?/file/d/(.*?)/view.*", "\\1", gl)
+# correct format for download link = "https://drive.google.com/uc?export=download&id=FILE_ID"
 
-# Construct direct download link
-gl2 <- paste0("https://drive.google.com/uc?export=download&id=", fileId)
+# read in link to paper in our drive
+driveLink <- "https://drive.google.com/file/d/1e591urtRJ-1gR2fikK7x_kBZBG42g3RW/view?usp=drive_link" 
 
-print(gl2)
+# extract file ID using regular expressions
+fileId <- sub(".*?/file/d/(.*?)/view.*", "\\1", driveLink)
 
-# correct format = "https://drive.google.com/uc?export=download&id=FILE_ID"
+# build direct download link
+downloadLink <- paste0("https://drive.google.com/uc?export=download&id=", fileId)
 
+# check it out
+print(downloadLink) # looks good!
 
 
 # upload job to llamaparse ####
 
+# setup LlamaParse prereqs
 headers = c(
   'Content-Type' = 'multipart/form-data',
   'Accept' = 'application/json',
   'Authorization' = paste('Bearer', apiKey)
 )
 
+# supply LlamaParse with specific parameters for this job
 body = list(
-  'input_url' = gl2,
-  'content_guideline_instruction' = 'This is a scientific paper. The text may appear in columns. Text appearing in the rightmost column on one page may continue in the leftmost column on the next page. 
+  'input_url' = downloadLink, # our download link
+  'disable_ocr' = TRUE, # stops LlamaParse from trying to translate images to text
+  'content_guideline_instruction' = # our instructions to the LLM
+  'This is a scientific paper. The text may appear in columns. Text appearing in the rightmost column on one page may continue in the leftmost column on the next page. 
 
 When you encounter a superscript or a subscript, place all text that is super or subscripted into brackets and include a "^" (superscript) or "_" (subscript) before the brackets. Be certain you always include the caret ^ or the underscore _ before the text in brackets. Omitting this leads to confusion about whether the text is subscripted or superscripted. The brackets are very important because they identify the extent of the text in the super or subscript, so these must always be included also.
 
@@ -55,48 +65,55 @@ Pay particular attention to units with negative superscripts, such as ml^-1, cm^
 '
 )
 
+# send to LlamaParse
 res <- VERB("POST", url = "https://api.cloud.llamaindex.ai/api/v1/parsing/upload", body = body, add_headers(headers), encode = 'multipart')
 
-
+# check to see jobId and status
 cat(content(res, as = 'text', encoding = "UTF-8"))
 
-status_code(res)
+# check status code to see if it worked 
+status_code(res) # (200 = good, 422 = bad)
 
-
-# save job ID
+# store job ID 
 response_json <- fromJSON(content(res, as = "text", encoding = "UTF-8"))
 
 jobId <- response_json$id
 
 
 
-# check job status
+# check job status ####
 
+# prep some prereqs for LlamaParse
 headers = c(
   'Accept' = 'application/json',
   'Authorization' = paste('Bearer', apiKey)
 )
 
+# make the request
 res <- VERB("GET", url = paste0("https://api.cloud.llamaindex.ai/api/v1/parsing/job/", jobId), add_headers(headers))
 
-cat(content(res, 'text', encoding = "UTF-8"))
+# view progress update
+cat(content(res, 'text', encoding = "UTF-8")) # SUCCESS = yay!
 
 
-# get markdown results:
+# view markdown results ####
 
+# LlamaParse header prereqs
 headers = c(
   'Accept' = 'application/json',
   'Authorization' = paste('Bearer', apiKey)
 )
 
+# make request
 res <- VERB("GET", url = paste0("https://api.cloud.llamaindex.ai/api/v1/parsing/job/", jobId, "/result/raw/markdown"), add_headers(headers))
 
+# print markdown content
 cat(content(res, 'text', encoding = "UTF-8"))
 
 
 
 
-# save md file
+# save md file ####
 mdContent <- content(res, 'text', encoding = "UTF-8")
 # 
 # writeLines(mdContent, "/Users/wyatt/Desktop/microbes/pdfToMd/flemerTest1.md")
