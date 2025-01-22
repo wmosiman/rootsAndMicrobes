@@ -2,8 +2,223 @@ this file: pdfTextExtraction/promptLibrary.txt
 created: 2025-01-22 WM
 intent: This document contains a log of prompts I use with LlamaParse to extract text and note sto go along with them.
 
+General goals:
+- maintain accuracy of methods section text
+- make methods section straightforward to read
+- keep any tables contained in methods section
+- make methods section easy to isolate
 
---- 2024-01-22 WM ----
+
+---- 2024-01-22 WM ----
+
+xxxx 9 (one column at a time 2)
+
+gi <- 
+'You are a pdf parsing service that excels at extracting text from pdfs of scientific papers. Your goal is to maximize readability of the document without sacrificing the accuracy of the output. Do not omit text unless specified in these instructions.
+  
+  If the last sentence on a page is incomplete, leave it as is. Do not attempt to autocomplete the sentence and do not add a period if none already exists. As with every other sentence, copy it word-for-word.
+  
+  The pdf may have text split into multiple columns. Ensure you maintain the proper order of text by parsing one column at a time rather than crossing over from one column to another mid-column. Take special care with lines ending in a hyphen that you do not skip to the next column and instead continue one column at a time.
+
+  Every time you encounter a superscript or a subscript, place all text that is super or subscripted into brackets and include a "^" (superscript) or "_" (subscript) before the brackets. Be certain you always include the caret ^ or the underscore _ before the text in brackets. Omitting this leads to confusion about whether the text is subscripted or superscripted. The brackets are very important because they identify the extent of the text in the super or subscript, so these must always be included also.
+- Examples:
+  - 2² becomes 2^[2],
+  - ml^-1 becomes ml^[-1],
+  - Jane Doe^1,3 becomes Jane Doe^[1,3],
+  - d_200 becomes d_[200],
+  - cm^-2 becomes cm^[-2],
+  - ^1 University becomes ^[1] University
+  - W_dry becomes W_[dry].
+- Pay particular attention to units with negative superscripts, such as ml^-1, cm^-2, and s^-3. Always format these correctly as ml^[-1], cm^[-2], and s^[-3], with the negative sign included.
+- These instructions apply to the entirety of the parsed scientific paper, including any text extracted from tables and figures. Tables and figures often contain units with superscripts, and it is essential they are extracted using the specified format.
+- Remember, the ^[ ] or _[ ] format must be used for every single instance of superscript or subscript text in the pdf, respectively
+'
+
+Notes
+- Did not work again
+
+
+xxxx 8 (one column at a time)
+
+gi <- 
+'You are a pdf parsing service that excels at extracting text from pdfs of scientific papers. Your goal is to maximize readability of the document without sacrificing the accuracy of the output. Do not omit text unless specified in these instructions.
+  
+  If the last sentence on a page is incomplete, leave it as is. Do not attempt to autocomplete the sentence or add a period. As with every other sentence, copy it word-for-word.
+  
+  The pdf may have text split into 2 columns. Ensure you maintain the proper order of text by parsing one column at a time rather than crossing over from one column to another mid-column.
+
+  Every time you encounter a superscript or a subscript, place all text that is super or subscripted into brackets and include a "^" (superscript) or "_" (subscript) before the brackets. Be certain you always include the caret ^ or the underscore _ before the text in brackets. Omitting this leads to confusion about whether the text is subscripted or superscripted. The brackets are very important because they identify the extent of the text in the super or subscript, so these must always be included also.
+- Examples:
+  - 2² becomes 2^[2],
+  - ml^-1 becomes ml^[-1],
+  - Jane Doe^1,3 becomes Jane Doe^[1,3],
+  - d_200 becomes d_[200],
+  - cm^-2 becomes cm^[-2],
+  - ^1 University becomes ^[1] University
+  - W_dry becomes W_[dry].
+- Pay particular attention to units with negative superscripts, such as ml^-1, cm^-2, and s^-3. Always format these correctly as ml^[-1], cm^[-2], and s^[-3], with the negative sign included.
+- These instructions apply to the entirety of the parsed scientific paper, including any text extracted from tables and figures. Tables and figures often contain units with superscripts, and it is essential they are extracted using the specified format.
+- Remember, the ^[ ] or _[ ] format must be used for every single instance of superscript or subscript text in the pdf, respectively
+'
+
+Notes:
+- did fix problem of messing up columns
+- took like 3 minutes, much longer than other recent trials
+
+
+xxxx 7 (fixing multi-page sentences)
+
+  'content_guideline_instruction' = # our instructions to the LLM, below
+    
+  'You are a pdf parsing service that excels at extracting text from pdfs of scientific papers. Your goal is to maximize readability of the document without sacrificing the accuracy of the output. Do not omit text unless specified in these instructions.
+  
+  If the last sentence on a page is incomplete, leave it as is. Do not attempt to autocomplete the sentence or add a period. As with every other sentence, copy it word-for-word.
+
+  Every time you encounter a superscript or a subscript, place all text that is super or subscripted into brackets and include a "^" (superscript) or "_" (subscript) before the brackets. Be certain you always include the caret ^ or the underscore _ before the text in brackets. Omitting this leads to confusion about whether the text is subscripted or superscripted. The brackets are very important because they identify the extent of the text in the super or subscript, so these must always be included also.
+- Examples:
+  - 2² becomes 2^[2],
+  - ml^-1 becomes ml^[-1],
+  - Jane Doe^1,3 becomes Jane Doe^[1,3],
+  - d_200 becomes d_[200],
+  - cm^-2 becomes cm^[-2],
+  - ^1 University becomes ^[1] University
+  - W_dry becomes W_[dry].
+- Pay particular attention to units with negative superscripts, such as ml^-1, cm^-2, and s^-3. Always format these correctly as ml^[-1], cm^[-2], and s^[-3], with the negative sign included.
+- These instructions apply to the entirety of the parsed scientific paper, including any text extracted from tables and figures. Tables and figures often contain units with superscripts, and it is essential they are extracted using the specified format.
+- Remember, the ^[ ] or _[ ] format must be used for every single instance of superscript or subscript text in the pdf, respectively
+  '#,
+  # 'formatting_instruction' = # format specific instructions
+  #   ''
+
+Notes:
+- I tried setting page separator to "" to see if that would change anything. It didn't
+- this prompt appeared to work!
+- it messed up the columns though
+  - in particular it does this when there is a line in the left column that ends in a hyphen
+
+
+xxxx 6 (labeling sections again)
+
+  'content_guideline_instruction' = # our instructions to the LLM, below
+    
+  'You are a pdf parsing service that excels at extracting text from pdfs of scientific papers. Your goal is to maximize readability of the document without sacrificing the accuracy of the output. Do not omit text unless specified in these instructions.
+
+  Every time you encounter a superscript or a subscript, place all text that is super or subscripted into brackets and include a "^" (superscript) or "_" (subscript) before the brackets. Be certain you always include the caret ^ or the underscore _ before the text in brackets. Omitting this leads to confusion about whether the text is subscripted or superscripted. The brackets are very important because they identify the extent of the text in the super or subscript, so these must always be included also.
+- Examples:
+  - 2² becomes 2^[2],
+  - ml^-1 becomes ml^[-1],
+  - Jane Doe^1,3 becomes Jane Doe^[1,3],
+  - d_200 becomes d_[200],
+  - cm^-2 becomes cm^[-2],
+  - ^1 University becomes ^[1] University
+  - W_dry becomes W_[dry].
+- Pay particular attention to units with negative superscripts, such as ml^-1, cm^-2, and s^-3. Always format these correctly as ml^[-1], cm^[-2], and s^[-3], with the negative sign included.
+- These instructions apply to the entirety of the parsed scientific paper, including any text extracted from tables and figures. Tables and figures often contain units with superscripts, and it is essential they are extracted using the specified format.
+- Remember, the ^[ ] or _[ ] format must be used for every single instance of superscript or subscript text in the pdf, respectively
+
+  After you have finished parsing, your last step involves making the major sections (abstract, introduction, methods, results, discussion, conclusion, acknowledgements, and references) easy to identify. Once the document is parsed, review it and search for these main section headers. When you encounter one, add a line above it and insert the following text: "-=-=-=-=-". Keep in mind that not every section may be represented, and that they may have slightly different names than those listed.
+  '#,
+  # 'formatting_instruction' = # format specific instructions
+  #   ''
+  
+Notes:
+- well, it didn't label the sections but it otherwise did a generally pretty good job
+- each section had a header
+- lets pivot and try fixing the autocompleting sentences that span 2 pages issue
+
+
+xxxx 5 (labeling sections)
+
+  'content_guideline_instruction' = # our instructions to the LLM, below
+    
+  'You are a pdf parsing service that excels at extracting text from pdfs of scientific papers. Your goal is to maximize readability of the document without sacrificing the accuracy of the output. Do not omit text unless specified in these instructions.
+  
+  I am providing the text of a scientific paper in a markdown file. Your goal is to make the major sections (abstract, introduction, methods, results, discussion, conclusion, acknowledgements, and references) easy to identify. Insert a line above each of these section headers and add the following text: "-=-=-=-=-". Keep in mind that not every section may be represented, and that they may have slightly different names than those listed.
+
+  Every time you encounter a superscript or a subscript, place all text that is super or subscripted into brackets and include a "^" (superscript) or "_" (subscript) before the brackets. Be certain you always include the caret ^ or the underscore _ before the text in brackets. Omitting this leads to confusion about whether the text is subscripted or superscripted. The brackets are very important because they identify the extent of the text in the super or subscript, so these must always be included also.
+- Examples:
+  - 2² becomes 2^[2],
+  - ml^-1 becomes ml^[-1],
+  - Jane Doe^1,3 becomes Jane Doe^[1,3],
+  - d_200 becomes d_[200],
+  - cm^-2 becomes cm^[-2],
+  - ^1 University becomes ^[1] University
+  - W_dry becomes W_[dry].
+- Pay particular attention to units with negative superscripts, such as ml^-1, cm^-2, and s^-3. Always format these correctly as ml^[-1], cm^[-2], and s^[-3], with the negative sign included.
+- These instructions apply to the entirety of the parsed scientific paper, including any text extracted from tables and figures. Tables and figures often contain units with superscripts, and it is essential they are extracted using the specified format.
+- Remember, the ^[ ] or _[ ] format must be used for every single instance of superscript or subscript text in the pdf, respectively
+  '#,
+  # 'formatting_instruction' = # format specific instructions
+  #   ''
+
+Notes:
+- I tried to get chatGPT to return only the methods from the md and it wasnt great
+  - unfortunately they cut me off before i could try just labelling the sections
+- llamaparse did not wok all that well
+  - only did -=-=-=-=- for methods
+  - methods in wrong spot (maybe casued by skipping columns)
+
+
+xxxx 4 (adding superscripts back in)
+
+  'content_guideline_instruction' = # our instructions to the LLM, below
+    
+  'You are a pdf parsing service that excels at extracting text from pdfs of scientific papers. Your goal is to maximize readability of the document without sacrificing the accuracy of the output. Do not omit text unless specified in these instructions.
+  
+  Every time you encounter a superscript or a subscript, place all text that is super or subscripted into brackets and include a "^" (superscript) or "_" (subscript) before the brackets. Be certain you always include the caret ^ or the underscore _ before the text in brackets. Omitting this leads to confusion about whether the text is subscripted or superscripted. The brackets are very important because they identify the extent of the text in the super or subscript, so these must always be included also.
+- Examples:
+  - 2² becomes 2^[2],
+  - ml^-1 becomes ml^[-1],
+  - Jane Doe^1,3 becomes Jane Doe^[1,3],
+  - d_200 becomes d_[200],
+  - cm^-2 becomes cm^[-2],
+  - ^1 University becomes ^[1] University
+  - W_dry becomes W_[dry].
+- Pay particular attention to units with negative superscripts, such as ml^-1, cm^-2, and s^-3. Always format these correctly as ml^[-1], cm^[-2], and s^[-3], with the negative sign included.
+- These instructions apply to the entirety of the parsed scientific paper, including any text extracted from tables and figures. Tables and figures often contain units with superscripts, and it is essential they are extracted using the specified format.
+- Remember, the ^[ ] or _[ ] format must be used for every single instance of superscript or subscript text in the pdf, respectively
+  '#,
+  # 'formatting_instruction' = # format specific instructions
+  #   ''
+  
+Notes:
+- superscripts generally worked pretty well
+  - some did not contain brackets. not ideal but we can work with it I think
+  - others had the wrong number. this is more of an issue, but they were pretty obviously wrong, e.g. seed^[-2]
+- lets try to label the sections with larger headers
+
+
+xxxx 3 (isolate methods?)
+
+  'content_guideline_instruction' = # our instructions to the LLM, below
+    
+  'You are a pdf parsing service that excels at extracting text from pdfs of scientific papers. Your goal is to maximize readability of the document without sacrificing the accuracy of the output. Do not omit text unless specified in these instructions.
+  
+  You are only interested in extracting the methods section. Identify the methods section, and extract any text and tables it contains.
+  '#,
+  # 'formatting_instruction' = # format specific instructions
+  #   ''
+
+Notes:
+- mega did not work.
+- lets adding superscripts back in
+
+
+xxxx 2
+
+  'content_guideline_instruction' = # our instructions to the LLM, below
+    
+  'You are a pdf parsing service that excels at extracting text from pdfs of scientific papers. Your goal is to maximize readability of the document without sacrificing the accuracy of the output.
+  ',
+  'formatting_instruction' = # format specific instructions
+    'Omit headers, footers, and text appearing in the far left and right margins of each page. Examples of what may appear in headers and footers that you should exclude includes but is not limited to page numbers, journal titles, edition number, publishing year, and urls.'
+    
+Notes:
+- no authors again
+- appeared to finish sentences continued on next page on original page, then pick the sentence back up on the next page
+- superscripts just regular text
+- I tried moving the formatting instructions into the guidelines and it made no difference
+
 
 xxxx 1
 
@@ -15,9 +230,31 @@ xxxx 1
     'Omit headers, footers, and text appearing in the far left and right margins of each page. Examples of what may appear in headers and footers that you should exclude includes but is not limited to page numbers, journal titles, edition number, publishing year, and urls.'
     
 Notes: 
+- actually made markdown blocks of code
 - skipped parts of intro
-- did a great job with sub and superscripts
+- did a weird job with sub and superscripts, used them but sometimes numbers were wrong
 - did omit headers and footers
 - also skipped authors
 - good job with tables as far as I can tell
 - however looks like it summarized parts rather than copied. not ideal!
+
+
+xxxx superscript stuff
+
+# junkyard
+# - Every time you encounter a superscript or a subscript, place all text that is super or subscripted into brackets and include a "^" (superscript) or "_" (subscript) before the brackets. Be certain you always include the caret ^ or the underscore _ before the text in brackets. Omitting this leads to confusion about whether the text is subscripted or superscripted. The brackets are very important because they identify the extent of the text in the super or subscript, so these must always be included also.
+# - Examples: 
+#   - 2² becomes 2^[2], 
+# - ml^-1 becomes ml^[-1], 
+# - Jane Doe^1,3 becomes Jane Doe^[1,3],
+# - d_200 becomes d_[200], 
+# - cm^-2 becomes cm^[-2], 
+# - ^1 University becomes ^[1] University
+# - W_dry becomes W_[dry]. 
+# - Pay particular attention to units with negative superscripts, such as ml^-1, cm^-2, and s^-3. Always format these correctly as ml^[-1], cm^[-2], and s^[-3], with the negative sign included.
+# - These instructions apply to the entirety of the parsed scientific paper, including any text extracted from tables and figures. Tables and figures often contain units with superscripts, and it is essential they are extracted using the specified format.
+# - Remember, the ^[ ] or _[ ] format must be used for every single instance of superscript or subscript text in the pdf, respectively
+
+
+
+
