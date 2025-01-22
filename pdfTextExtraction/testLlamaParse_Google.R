@@ -7,6 +7,9 @@ rm(list = ls())
 # load packages etc ####
 library(httr)
 library(jsonlite)
+library(googledrive)
+
+source('build.R')
 
 # save API key for LlamaParse
 # find a more secure way to do this wyatt! Important if we actually start spending money
@@ -21,17 +24,20 @@ apiKey <- "llx-6t7yYTJFopYODUsCTBZdEIBXHuAHF60ZwfCK63XZIbLJ0XDw"
 
 # correct format for download link = "https://drive.google.com/uc?export=download&id=FILE_ID"
 
-# read in link to paper in our drive
-driveLink <- "https://drive.google.com/file/d/1e591urtRJ-1gR2fikK7x_kBZBG42g3RW/view?usp=drive_link" 
+# authenticate user (driveUser comes from 'build.R')
+drive_auth(email = driveUser)
 
-# extract file ID using regular expressions
-fileId <- sub(".*?/file/d/(.*?)/view.*", "\\1", driveLink)
+# get pdf file information
+pdfs <- drive_ls(path = "input") # oh wow didn't even need a path. what about folders with identical names? don't love this, find more specific way mayhaps. Id for the folder probably good
 
-# build direct download link
-downloadLink <- paste0("https://drive.google.com/uc?export=download&id=", fileId)
+# convert ids to direct download urls
+ids <- as.character(pdfs$id)
+urls <- paste0("https://drive.google.com/uc?export=download&id=", ids)
+print(urls)
 
-# check it out
-print(downloadLink) # looks good!
+
+
+# okay could make a function to iterate over all files for llamaparse
 
 
 # upload job to llamaparse ####
@@ -45,25 +51,31 @@ headers = c(
 
 # supply LlamaParse with specific parameters for this job
 body = list(
-  'input_url' = downloadLink, # our download link
+  'input_url' = urls[1], # our download link
   'disable_ocr' = TRUE, # stops LlamaParse from trying to translate images to text
-  'content_guideline_instruction' = # our instructions to the LLM
-  'This is a scientific paper. The text may appear in columns. Text appearing in the rightmost column on one page may continue in the leftmost column on the next page. 
-
-When you encounter a superscript or a subscript, place all text that is super or subscripted into brackets and include a "^" (superscript) or "_" (subscript) before the brackets. Be certain you always include the caret ^ or the underscore _ before the text in brackets. Omitting this leads to confusion about whether the text is subscripted or superscripted. The brackets are very important because they identify the extent of the text in the super or subscript, so these must always be included also.
-
-Examples: 
-2² becomes 2^[2], 
-ml^-1 becomes ml^[-1], 
-Jane Doe^1,3 becomes Jane Doe^[1,3],
-d_200 becomes d_[200], 
-cm^-2 becomes cm^[-2], 
-^1 University becomes ^[1] University
-W_dry becomes W_[dry]. 
-
-Pay particular attention to units with negative superscripts, such as ml^-1, cm^-2, and s^-3. Always format these correctly as ml^[-1], cm^[-2], and s^[-3], with the negative sign included.
-'
+  'page_separator' = "\n\n---- Page {pageNumber} ----\n\n",
+  'content_guideline_instruction' = # our instructions to the LLM, below
+    
+  'You are a pdf parsing service that excels at extracting text from pdfs of scientific papers and converting it to markdown format. Your goal is to maximize readability and accuracy of the output rather than copy the document word-for-word.
+  ',
+  'formatting_instruction' = # format specific instructions
+    'Omit headers, footers, and text appearing in the far left and right margins of each page. Examples of what may appear in headers and footers that you should exclude includes but is not limited to page numbers, journal titles, edition number, publishing year, and urls.'
 )
+
+# junkyard
+# - Every time you encounter a superscript or a subscript, place all text that is super or subscripted into brackets and include a "^" (superscript) or "_" (subscript) before the brackets. Be certain you always include the caret ^ or the underscore _ before the text in brackets. Omitting this leads to confusion about whether the text is subscripted or superscripted. The brackets are very important because they identify the extent of the text in the super or subscript, so these must always be included also.
+# - Examples: 
+#   - 2² becomes 2^[2], 
+# - ml^-1 becomes ml^[-1], 
+# - Jane Doe^1,3 becomes Jane Doe^[1,3],
+# - d_200 becomes d_[200], 
+# - cm^-2 becomes cm^[-2], 
+# - ^1 University becomes ^[1] University
+# - W_dry becomes W_[dry]. 
+# - Pay particular attention to units with negative superscripts, such as ml^-1, cm^-2, and s^-3. Always format these correctly as ml^[-1], cm^[-2], and s^[-3], with the negative sign included.
+# - These instructions apply to the entirety of the parsed scientific paper, including any text extracted from tables and figures. Tables and figures often contain units with superscripts, and it is essential they are extracted using the specified format.
+# - Remember, the ^[ ] or _[ ] format must be used for every single instance of superscript or subscript text in the pdf, respectively
+
 
 # send to LlamaParse
 res <- VERB("POST", url = "https://api.cloud.llamaindex.ai/api/v1/parsing/upload", body = body, add_headers(headers), encode = 'multipart')
@@ -93,7 +105,7 @@ headers = c(
 res <- VERB("GET", url = paste0("https://api.cloud.llamaindex.ai/api/v1/parsing/job/", jobId), add_headers(headers))
 
 # view progress update
-cat(content(res, 'text', encoding = "UTF-8")) # SUCCESS = yay!
+cat(content(res, 'text', encoding = "UTF-8")) # PENDING = be patient! | SUCCESS = yay!
 
 
 # view markdown results ####
@@ -114,8 +126,21 @@ cat(content(res, 'text', encoding = "UTF-8"))
 
 
 # save md file ####
+# save content as string
 mdContent <- content(res, 'text', encoding = "UTF-8")
-# 
-# writeLines(mdContent, "/Users/wyatt/Desktop/microbes/pdfToMd/flemerTest1.md")
-# 
+
+# Create a temporary file connection with the markdown text
+tempFile <- tempfile(fileext = ".md")
+writeLines(mdContent, tempFile)
+
+# Upload the temporary file to Google Drive
+drive_upload(
+  path = 'output',
+  media = tempFile,
+  name = "biswas2000_001.md",    # Name of the file in Google Drive
+  # type = "document"       # Specify the type if needed (e.g., "document" or "application/vnd.google-apps.file")
+)
+
+# Clean up the temporary file
+unlink(tempFile)
 
