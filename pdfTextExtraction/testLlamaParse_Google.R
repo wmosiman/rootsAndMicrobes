@@ -11,53 +11,13 @@ library(googledrive)
 library(beepr)
 
 source('build.R')
+source('functions.R')
 
-# save API key for LlamaParse
-# find a more secure way to do this wyatt! Extra important if/when we actually start spending money
-apiKey <- LLAMA_CLOUD_API_KEY
+# get API key for LlamaParse
+lpKey <- Sys.getenv("LLAMA_CLOUD_API_KEY") # this is saved in my .Renviron file
 
 # authenticate user for googledrive package (driveUser comes from 'build.R')
 drive_auth(email = driveUser)
-
-
-# write functions                            ####
-
-# check the status of an in-progress llamaparse job
-checkJobStatus <- function(id, key) {
-  headers = c(
-    'Accept' = 'application/json',
-    'Authorization' = paste('Bearer', key)
-  )
-  
-  res <- VERB("GET", url = paste0("https://api.cloud.llamaindex.ai/api/v1/parsing/job/", id), add_headers(headers))
-  content <- content(res)
-  return(content$status) # Adjust based on API response structure
-}
-
-# track llamaparse job progress and give a beep when complete
-pollJobStatus <- function(id, key, interval = 10) {
-  seconds <- 0
-   repeat {
-    seconds <- seconds + interval
-    status <- checkJobStatus(id, key)
-    cat("Current status:", status, "\n")
-    
-    if (status == "SUCCESS") {
-      beep(1) # Play a success sound
-      cat("Job completed!\nSeconds elapsed:", seconds)
-      Sys.sleep(2)
-      break
-    } else if (status == "FAILED") {
-      beep(10) # Play an error sound
-      cat("Job failed\n")
-      Sys.sleep(2)
-      break
-    }
-    
-    Sys.sleep(interval) # Wait before checking again
-  }
-}
-
 
 # prep google drive link                     ####
 
@@ -109,17 +69,18 @@ fi <- ''
 headers = c(
   'Content-Type' = 'multipart/form-data',
   'Accept' = 'application/json',
-  'Authorization' = paste('Bearer', apiKey)
+  'Authorization' = paste('Bearer', lpKey)
 )
 
 # supply LlamaParse with specific parameters for this job
 body = list(
-  'input_url' = urls[1], # our download link
-  'disable_ocr' = TRUE, # stops LlamaParse from trying to translate images to text
-  'page_separator' = "\n\n---- Page {pageNumber} ----\n\n", # how it should separate pages
-  'content_guideline_instruction' = gi # guidelines for parsing (see 'write llamaparse instructions' section)
+  'input_url' = urls[1],                                     # our download link
+  'disable_ocr' = TRUE,                                      # stops LlamaParse from trying to translate images to text
+  'do_not_unroll_columns' = FALSE,                           # tells lp whether how to parse columns
+  'page_separator' = "\n\n---- Page {pageNumber} ----\n\n",  # how it should separate pages
+  'content_guideline_instruction' = gi                       # guidelines for parsing (see 'write llamaparse instructions' section)
   #,
-  # 'formatting_instruction' = fi # formating specific instructions
+  # 'formatting_instruction' = fi                            # formating specific instructions
 )
 
 
@@ -133,7 +94,7 @@ jobId <- response_json$id
 
 
 # check job status                           ####
-pollJobStatus(id = jobId, key = apiKey)
+lp.pollJobStatus(id = jobId, key = lpKey)
 
 
 
@@ -142,7 +103,7 @@ pollJobStatus(id = jobId, key = apiKey)
 # LlamaParse header prereqs
 headers = c(
   'Accept' = 'application/json',
-  'Authorization' = paste('Bearer', apiKey)
+  'Authorization' = paste('Bearer', lpKey)
 )
 
 # make request
