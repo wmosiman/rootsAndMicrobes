@@ -1,0 +1,23 @@
+this file: pdfTextExtraction/promptLibrary.txt
+created: 2025-01-22 WM
+intent: This document contains a log of prompts I use with LlamaParse to extract text and note sto go along with them.
+
+
+--- 2024-01-22 WM ----
+
+xxxx 1
+
+'content_guideline_instruction' = # our instructions to the LLM, below
+    
+  'You are a pdf parsing service that excels at extracting text from pdfs of scientific papers and converting it to markdown format. Your goal is to maximize readability and accuracy of the output rather than copy the document word-for-word.
+  ',
+  'formatting_instruction' = # format specific instructions
+    'Omit headers, footers, and text appearing in the far left and right margins of each page. Examples of what may appear in headers and footers that you should exclude includes but is not limited to page numbers, journal titles, edition number, publishing year, and urls.'
+    
+Notes: 
+- skipped parts of intro
+- did a great job with sub and superscripts
+- did omit headers and footers
+- also skipped authors
+- good job with tables as far as I can tell
+- however looks like it summarized parts rather than copied. not ideal!
