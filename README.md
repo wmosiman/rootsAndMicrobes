@@ -9,8 +9,20 @@ This repository was created to store files and work related to the population ro
 1. [Description](#description)
 1. [Table of contents](#table-of-contents)
 1. [Useful links](#useful-links)
+1. [About API Keys](#about-api-keys)
 1. [LLM background info](#llm-background-info)
+  a. [Vocab](#vocab)
+  a. [General Knowledge](#general-knowledge)
+  a. [Existing LLMs](#existing-llms)
+  a. [Prompting](#prompting)
+  a. [RAG (retrieval augmented generation)](#rag-(retreival-augmented-generation))
+  a. [Fine tuning](#fine-tuning)
+  a. [Using LLMs in R](#using-llms-in-r)
+  a. [Further reading](#further-reading)
 1. [PDF text extraction](#pdf-text-extraction)
+  a. [Why convert PDF to text?](#why=convert-pdf-to-text?)
+  a. [LlamaParse](#llamaparse)
+  a. [Progress](#progress)
 
 
 ## Useful links
@@ -19,6 +31,21 @@ This repository was created to store files and work related to the population ro
 - [Team screening sheet](https://docs.google.com/spreadsheets/d/19eey5xnubweUFjWB6cQsIqWE0NVbR3iI/edit?usp=drive_web&ouid=107437607939897430548&rtpof=true)
 - [Wyatt meeting notes](https://docs.google.com/document/d/1Ll896NO8CuWZX9OfZVd0EX9DRcJygswy/edit)
 - [Semi-automated pipeline flowchart](https://miro.com/app/board/uXjVLwQZ-h8=/)
+
+
+## About API Keys
+
+[Application programming interface (API)](https://www.ibm.com/think/topics/api) and API keys are critical for integrating many types of software into your workflow. This section provides some brief background and best practices tips for working with API.
+
+APIs are a way of connecting computers and computer programs. They're the communication link between a client (like you, me, or a program) and a server (some software). Universal logins are a good example of this; when you select the "login with Google" option on some third-party nothing-to-do-with-Google website, that website is using an API to interface with Google, securly communicating information to allow you to login with your Gmail account. APIs allow you to use programs designed by other people without seeing all the behind the scenes stuff, which is both useful to you (keeps things simple) and to the developers of the programs (keeps their secrets).
+
+Oftentimes, to use an API, you will need an [API Key](https://www.fortinet.com/resources/cyberglossary/api-key). You can think of this like an ID badge: it is a unique identifier that gives you certain, specified permissions and tracks how it is used. And - like an ID badge, you want to keep it secure. Not just anyone should have access to it! One security measure is to limit the permissions of your API key to only what you need for a specific task or project. Another trick is to rotate them periodically, so you aren't using the same one forever. It's also important to not share them, so no copy pasting them directly into your code that others can see! What I did to keep keys hidden while still keeping it easy to call them in R was by storing my API keys locally, so they only exist on my computer's hard drive. Here's how to copy what I did:
+
+1. Locate your .Renviron file (location differs by computer)
+1. Add a line to your this file with something like: `MY_API_KEY = "myCopyPastedApiKey1234567654321"`
+1. Save this file and restart your R session
+1. You can now assign your API key to a variable in R with the following code: `apiKey <- Sys.getenv("MY_API_KEY")`
+
 
 
 ## LLM background info
@@ -48,7 +75,46 @@ We're interested in using LLMs to extract data from scientific papers. Specifica
 ### Existing LLMs 
 Despite being the most famous, ChatGPT is far from the only LLM available for use (as every company besides OpenAI would like you to be aware of). Here are descriptions and comparisons of the primary contenders for our use:
 
+#### [GPT-4o](https://platform.openai.com/docs/models#gpt-4o)
+Your standard ChatGPT LLM.
 
+#### [GPT-4o mini](https://platform.openai.com/docs/models#gpt-4o-mini)
+A miniature model of GPT-4o which is cheaper good for fine tuning for specific tasks
+
+#### [o1-mini](https://platform.openai.com/docs/models#o1)
+Model that "thinks" before it answers using an extensice internal thought chain. Good for fine tuning for complex tasks, but more expensive
+
+#### [Claude 3.5 Sonnet](https://docs.anthropic.com/en/docs/about-claude/models#model-comparison-table)
+Most intelligent and capable Anthropic model
+
+#### [Claude 3.5 Haiku](https://docs.anthropic.com/en/docs/about-claude/models#model-comparison-table)
+Fastest Anthropic model
+
+#### [Gemini 1.5 Pro](https://ai.google.dev/gemini-api/docs/models/gemini#gemini-1.5-pro)
+Optimized for wide range of reasoning tasks
+
+#### [Gemini 1.5 Flash](https://ai.google.dev/gemini-api/docs/models/gemini#gemini-1.5-flash)
+Fast and versatile for diverse tasks
+
+#### [AQA](https://ai.google.dev/gemini-api/docs/models/gemini#aqa)
+Designed for asking question about a document and getting answers grounded in the provided source for minimizing hallucinations
+
+- Designed with saying "I don't know" in mind
+- Maybe what notebook LM is based on? unclear
+
+#### [Llama 3.3](https://github.com/meta-llama/llama-models/blob/main/models/llama3_3/MODEL_CARD.md)
+Pretrained versions can be effectively adapted to specific language tasks
+
+
+#### [Llama 3.2](https://github.com/meta-llama/llama-models/blob/main/models/llama3_2/MODEL_CARD.md)
+Instruction-tuned models are intended for applications including knowledge retrieval and summarization
+
+
+#### [Llama 3.2-Vision](https://github.com/meta-llama/llama-models/blob/main/models/llama3_2/MODEL_CARD_VISION.md)
+Adapted for analyzing and answering questions about an image
+
+
+#### Comparison table
 
 | Company   | Model             | Parameter count | Context window (tokens) | Max output (tokens) | Input price (per M tokens) | Output price (per M tokens) | Open source | Text only |
 | :------   | :-----            | --------------: | ----------------------: | ------------------: | -------------------------: | --------------------------: | :---------: | :-------: |
@@ -59,13 +125,13 @@ Despite being the most famous, ChatGPT is far from the only LLM available for us
 | Anthropic | Claude 3.5 Haiku  |                 | 200,000                 | 8,192               | $0.80                      | $4.00                       | FALSE       | FALSE     |
 | Google    | Gemini 1.5 Pro    |                 | 2,097,152               | 8,192               | Free (to an extent)        | Free (to an extent)         | FALSE       | FALSE     |
 | Google    | Gemini 1.5 Flash  |                 | 1,048,576               | 8,192               | Free (to an extent)        | Free (to an extent)         | FALSE       | FALSE     |
-| Google    | AQA               |                 | 7,168                   | 1,024               | ????                       | ????                        | FALSE       | FALSE     |
+| Google    | AQA               |                 | 7,168                   | 1,024               | ????                       | ????                        | FALSE       | TRUE      |
+| Meta      | Llama 3.3         | 70B             | 128,000                 | ????                | Free                       | Free                        | TRUE        | TRUE      |
+| Meta      | Llama 3.2         | 3B              | 8k-128k                 | ????                | Free                       | Free                        | TRUE        | TRUE      |
+| Meta      | Llama 3.2-Vision  | 11-90B          | 128,000                 | ????                | Free                       | Free                        | TRUE        | FALSE     |
 
-
-[Google Gemini pricing](https://ai.google.dev/pricing#1_5pro)
-
-
-Last updated 2025-01-23 wm
+- Last updated 2025-01-24 wm
+- [Google Gemini pricing](https://ai.google.dev/pricing#1_5pro)
 
 
 ### Prompting
