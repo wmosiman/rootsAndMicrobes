@@ -38,9 +38,8 @@ lp.checkJobStatus <- function(id, key) {
 lp.pollJobStatus <- function(id, key, interval = 10, sound = T) {
   seconds <- 0
   repeat {
-    seconds <- seconds + interval
     status <- lp.checkJobStatus(id, key)
-    cat("Current status:", status, "\n")
+    cat("Current status:", status, "| time elapsed:", seconds, "s", "\n")
     
     if (status == "SUCCESS") {
       if (sound == T) {
@@ -59,5 +58,6 @@ lp.pollJobStatus <- function(id, key, interval = 10, sound = T) {
     }
     
     Sys.sleep(interval) # Wait [interval] seconds before checking again
+    seconds <- seconds + interval
   }
 }
