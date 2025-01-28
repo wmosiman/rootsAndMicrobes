@@ -11,18 +11,18 @@ This repository was created to store files and work related to the population ro
 1. [Useful links](#useful-links)
 1. [About API Keys](#about-api-keys)
 1. [LLM background info](#llm-background-info)
-  a. [Vocab](#vocab)
-  a. [General Knowledge](#general-knowledge)
-  a. [Existing LLMs](#existing-llms)
-  a. [Prompting](#prompting)
-  a. [RAG (retrieval augmented generation)](#rag-(retreival-augmented-generation))
-  a. [Fine tuning](#fine-tuning)
-  a. [Using LLMs in R](#using-llms-in-r)
-  a. [Further reading](#further-reading)
+    a. [Vocab](#vocab)
+    a. [General Knowledge](#general-knowledge)
+    a. [Existing LLMs](#existing-llms)
+    a. [Prompting](#prompting)
+    a. [RAG (retrieval augmented generation)](#rag-(retreival-augmented-generation))
+    a. [Fine tuning](#fine-tuning)
+    a. [Using LLMs in R](#using-llms-in-r)
+    a. [Further reading](#further-reading)
 1. [PDF text extraction](#pdf-text-extraction)
-  a. [Why convert PDF to text?](#why=convert-pdf-to-text?)
-  a. [LlamaParse](#llamaparse)
-  a. [Progress](#progress)
+    a. [Why convert PDF to text?](#why=convert-pdf-to-text?)
+    a. [LlamaParse](#llamaparse)
+    a. [Progress](#progress)
 
 
 ## Useful links
@@ -113,22 +113,30 @@ Instruction-tuned models are intended for applications including knowledge retri
 #### [Llama 3.2-Vision](https://github.com/meta-llama/llama-models/blob/main/models/llama3_2/MODEL_CARD_VISION.md)
 Adapted for analyzing and answering questions about an image
 
+#### [Deepseek V3](https://github.com/deepseek-ai/DeepSeek-V3)
+Primary DeepSeek model. Uses context caching to lower costs.
+
+#### [DeepSeek R1](https://github.com/deepseek-ai/DeepSeek-R1)
+A model that uses chain-of-thought reasoning, similar strategy and performance to GPT-o1 and o1-mini. Uses context caching to lower costs.
+
 
 #### Comparison table
 
-| Company   | Model             | Parameter count | Context window (tokens) | Max output (tokens) | Input price (per M tokens) | Output price (per M tokens) | Open source | Text only |
-| :------   | :-----            | --------------: | ----------------------: | ------------------: | -------------------------: | --------------------------: | :---------: | :-------: |
-| OpenAI    | GPT-4o            |                 | 128,000                 | 16,384              | $2.50                      | $10.00                      | FALSE       | FALSE     | 
-| OpenAI    | GPT-4o mini       |                 | 128,000                 | 16,384              | $0.15                      | $0.60                       | FALSE       | FALSE     |
-| OpenAI    | o1-mini           |                 | 200,000                 | 100,000             | $3.00                      | $12.00                      | FALSE       | FALSE     |
-| Anthropic | Claude 3.5 Sonnet |                 | 200,000                 | 8,192               | $3.00                      | $15.00                      | FALSE       | FALSE     |
-| Anthropic | Claude 3.5 Haiku  |                 | 200,000                 | 8,192               | $0.80                      | $4.00                       | FALSE       | FALSE     |
-| Google    | Gemini 1.5 Pro    |                 | 2,097,152               | 8,192               | Free (to an extent)        | Free (to an extent)         | FALSE       | FALSE     |
-| Google    | Gemini 1.5 Flash  |                 | 1,048,576               | 8,192               | Free (to an extent)        | Free (to an extent)         | FALSE       | FALSE     |
-| Google    | AQA               |                 | 7,168                   | 1,024               | ????                       | ????                        | FALSE       | TRUE      |
-| Meta      | Llama 3.3         | 70B             | 128,000                 | ????                | Free                       | Free                        | TRUE        | TRUE      |
-| Meta      | Llama 3.2         | 3B              | 8k-128k                 | ????                | Free                       | Free                        | TRUE        | TRUE      |
-| Meta      | Llama 3.2-Vision  | 11-90B          | 128,000                 | ????                | Free                       | Free                        | TRUE        | FALSE     |
+| Company   | Model             | Context window (tokens) | Max output (tokens) | Input price (per M tokens) | Output price (per M tokens) | Open source | Text only |
+| :------   | :-----            | ----------------------: | ------------------: | -------------------------: | --------------------------: | :---------: | :-------: |
+| OpenAI    | GPT-4o            | 128,000                 | 16,384              | $2.50                      | $10.00                      | FALSE       | FALSE     | 
+| OpenAI    | GPT-4o mini       | 128,000                 | 16,384              | $0.15                      | $0.60                       | FALSE       | FALSE     |
+| OpenAI    | o1-mini           | 200,000                 | 100,000             | $3.00                      | $12.00                      | FALSE       | FALSE     |
+| Anthropic | Claude 3.5 Sonnet | 200,000                 | 8,192               | $3.00                      | $15.00                      | FALSE       | FALSE     |
+| Anthropic | Claude 3.5 Haiku  | 200,000                 | 8,192               | $0.80                      | $4.00                       | FALSE       | FALSE     |
+| Google    | Gemini 1.5 Pro    | 2,097,152               | 8,192               | Free (to an extent)        | Free (to an extent)         | FALSE       | FALSE     |
+| Google    | Gemini 1.5 Flash  | 1,048,576               | 8,192               | Free (to an extent)        | Free (to an extent)         | FALSE       | FALSE     |
+| Google    | AQA               | 7,168                   | 1,024               | ????                       | ????                        | FALSE       | TRUE      |
+| Meta      | Llama 3.3         | 128,000                 | ????                | Free                       | Free                        | TRUE        | TRUE      |
+| Meta      | Llama 3.2         | 8k-128k                 | ????                | Free                       | Free                        | TRUE        | TRUE      |
+| Meta      | Llama 3.2-Vision  | 128,000                 | ????                | Free                       | Free                        | TRUE        | FALSE     |
+| DeepSeek  | DeepSeek V3       | 64,000                  | 8,000               | $0.07-$0.27                | $1.10                       | TRUE        | FALSE     |
+| DeepSeek  | DeepSeek R1       | 64,000                  | 8,000               | $0.14-$0.55                | $2.19                       | TRUE        | FALSE     |
 
 - Last updated 2025-01-24 wm
 - [Google Gemini pricing](https://ai.google.dev/pricing#1_5pro)
@@ -152,6 +160,12 @@ Adapted for analyzing and answering questions about an image
 
 ## PDF text extraction
 ### Why convert pdf to text?
+
+
+### Manual
+I tried manual text extraction with 22 studies that Alicia had already marked as suitable and had extracted the methods data for. This took me 30 minutes on the dot, including one study where copy-paste did not work at all (Brunner 2001, indicated with [UNABLE TO COPY TEXT]). These studies will give us a baseline to evaluate the efficacy of the LLMs' extraction abilities.
+
+I created 2 folders in the google drive, one a collection of the PDFs of the suitable studies and the other full of txt files with names corresponding to each of the studies. I did this manually, but this could be automated if we wanted to do this at scale. I opened one study's pdf and txt file (using google txt editor) and copied over the paper title, the methods section header, and all the text contained in that section. I omitted figures, headers and footers, etc. I copied one column at a time, adding a space or new line where appropriate in between pastes. Otherwise I did not do any beautification of the results. The timer started when I opened the first files and ended when I copied and saved the last copy paste.
 
 
 ### LlamaParse
