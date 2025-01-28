@@ -39,11 +39,11 @@ urls <- paste0("https://drive.google.com/uc?export=download&id=", ids) # add on 
 
 # guidelines instructions
 gi <- 
-'You are a pdf parsing service that excels at extracting text from pdfs of scientific papers. Your goal is to maximize readability of the document without sacrificing the accuracy of the output. Do not omit text unless specified in these instructions.
+'You are a pdf parsing service that excels at extracting text from pdfs of scientific papers. Your goal is to maximize readability of the document without sacrificing the accuracy of the output. 
+
+When processing the document, consider its multi-column structure. ALWAYS extract the entirety of the leftmost column first before proceeding to any additional columns. All text in the pdf contains essential information, so it is very important to ensure text from all columns are extracted in the correct order.
   
   If the last sentence on a page is incomplete, leave it as is. Do not attempt to autocomplete the sentence and do not add a period if none already exists. As with every other sentence, copy it word-for-word.
-  
-  The pdf may have text split into multiple columns. Ensure you maintain the proper order of text by parsing one column at a time rather than crossing over from one column to another mid-column. Take special care with lines ending in a hyphen that you do not skip to the next column and instead continue one column at a time.
 
   Every time you encounter a superscript or a subscript, place all text that is super or subscripted into brackets and include a "^" (superscript) or "_" (subscript) before the brackets. Be certain you always include the caret ^ or the underscore _ before the text in brackets. Omitting this leads to confusion about whether the text is subscripted or superscripted. The brackets are very important because they identify the extent of the text in the super or subscript, so these must always be included also.
 - Examples:
@@ -111,7 +111,6 @@ res <- VERB("GET", url = paste0("https://api.cloud.llamaindex.ai/api/v1/parsing/
 
 # print markdown content
 cat(content(res, 'text', encoding = "UTF-8"))
-
 
 
 
